@@ -10,6 +10,9 @@ object MiMaFilters {
     ProblemFilters.exclude[ReversedMissingMethodProblem]("scala.quoted.Quotes#reflectModule#defnModule.FunctionClass"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("scala.quoted.Quotes#reflectModule#defnModule.PolyFunctionClass"),
     ProblemFilters.exclude[ReversedMissingMethodProblem]("scala.quoted.Quotes#reflectModule#TypeReprMethods.dealiasKeepOpaques"),
+    ProblemFilters.exclude[ReversedMissingMethodProblem]("scala.quoted.Quotes#reflectModule#defnModule.FunctionClass"),
+    // New API in 3.4.X
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scala.compiletime.testing.Error.defaultArgument"),
   )
   val TastyCore: Seq[ProblemFilter] = Seq(
     ProblemFilters.exclude[DirectMissingMethodProblem]("dotty.tools.tasty.TastyFormat.EXPLICITtpt"),

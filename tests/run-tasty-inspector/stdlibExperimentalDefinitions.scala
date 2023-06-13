@@ -58,6 +58,10 @@ val experimentalDefinitionInLibrary = Set(
   //// New feature: into
   "scala.annotation.allowConversions",
 
+  //// New APIs: Mirror support for default arguments
+  "scala.deriving.Mirror$.Product.MirroredElemHasDefaults",
+  "scala.deriving.Mirror$.Product.defaultArgument",
+
   //// New feature: Macro annotations
   "scala.annotation.MacroAnnotation",
 
