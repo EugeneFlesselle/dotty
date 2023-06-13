@@ -9,7 +9,7 @@ import Decorators._
 import NameOps._
 import Annotations.Annotation
 import typer.ProtoTypes.constrained
-import ast.untpd
+import ast.{tpd, untpd}
 import ValueClasses.isDerivedValueClass
 import SymUtils._
 import util.Property
@@ -83,6 +83,11 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
 
   private def synthesizeDef(sym: TermSymbol, rhsFn: List[List[Tree]] => Context ?=> Tree)(using Context): Tree =
     DefDef(sym, rhsFn(_)(using ctx.withOwner(sym))).withSpan(ctx.owner.span.focus)
+
+  private def synthesizeExperimentalDef(sym: TermSymbol, rhsFn: List[List[Tree]] => Context ?=> Tree)(using Context): Tree = {
+    sym.addAnnotation(Annotation(defn.ExperimentalAnnot, sym.span))
+    synthesizeDef(sym, rhsFn)
+  }
 
   /** If this is a case or value class, return the appropriate additional methods,
    *  otherwise return nothing.
@@ -522,6 +527,29 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
     New(classRefApplied, elems)
   end fromProductBody
 
+  def defaultArgumentBody(caseClass: Symbol, index: Tree, optInfo: Option[MirrorImpl.OfProduct])(using Context): Tree =
+    val companionTree: Tree =
+      val companion: Symbol = caseClass.companionModule
+      val prefix: Type = optInfo.fold(NoPrefix)(_.pre)
+      ref(TermRef(prefix, companion.asTerm))
+
+    def defaultArgumentGetter(idx: Int): Tree =
+      val getterName = NameKinds.DefaultGetterName(nme.CONSTRUCTOR, idx)
+      val getterDenot = companionTree.tpe.member(getterName)
+      companionTree.select(TermRef(companionTree.tpe, getterName, getterDenot))
+
+    val withDefaultCases =
+      for (acc, idx) <- caseClass.caseAccessors.zipWithIndex if acc.is(HasDefault)
+      yield CaseDef(Literal(Constant(idx)), EmptyTree, defaultArgumentGetter(idx))
+
+    val withoutDefaultCase =
+      val stringIndex = Apply(Select(index, nme.toString_), Nil)
+      val nsee = tpd.resolveConstructor(defn.NoSuchElementExceptionType, List(stringIndex))
+      CaseDef(Underscore(defn.IntType), EmptyTree, Throw(nsee))
+
+    Match(index, withDefaultCases :+ withoutDefaultCase)
+  end defaultArgumentBody
+
   /** For an enum T:
    *
    *     def ordinal(x: MirroredMonoType) = x.ordinal
@@ -591,6 +619,11 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
           synthesizeDef(meth, vrefss => body(cls, vrefss.head.head))
       }
     }
+    def overrideMethod(name: TermName, info: Type, cls: Symbol, body: (Symbol, Tree) => Context ?=> Tree): Unit = { // TODO online override if changed
+      val meth = newSymbol(clazz, name, Synthetic | Method | Override, info, coord = clazz.coord)
+      meth.enteredAfter(thisPhase)
+      newBody = newBody :+ synthesizeExperimentalDef(meth, vrefss => body(cls, vrefss.head.head))
+    }
     val linked = clazz.linkedClass
     lazy val monoType = {
       val existing = clazz.info.member(tpnme.MirroredMonoType).symbol
@@ -608,6 +641,8 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
       addParent(defn.Mirror_ProductClass.typeRef)
       addMethod(nme.fromProduct, MethodType(defn.ProductClass.typeRef :: Nil, monoType.typeRef), cls,
         fromProductBody(_, _, optInfo).ensureConforms(monoType.typeRef))  // t4758.scala or i3381.scala are examples where a cast is needed
+      if cls.primaryConstructor.hasDefaultParams then overrideMethod(nme.defaultArgument,
+        MethodType(defn.IntType :: Nil, defn.AnyType), cls, defaultArgumentBody(_, _, optInfo))
     }
     def makeSumMirror(cls: Symbol, optInfo: Option[MirrorImpl.OfSum]) = {
       addParent(defn.Mirror_SumClass.typeRef)
@@ -639,9 +674,8 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
     val clazz = ctx.owner.asClass
     val syntheticMembers = serializableObjectMethod(clazz) ::: serializableEnumValueMethod(clazz) ::: caseAndValueMethods(clazz)
     checkInlining(syntheticMembers)
-    val impl1 = cpy.Template(impl)(body = syntheticMembers ::: impl.body)
-    if ctx.settings.Yscala2Stdlib.value then impl1
-    else addMirrorSupport(impl1)
+    addMirrorSupport(
+      cpy.Template(impl)(body = syntheticMembers ::: impl.body))
   }
 
   private def checkInlining(syntheticMembers: List[Tree])(using Context): Unit =
