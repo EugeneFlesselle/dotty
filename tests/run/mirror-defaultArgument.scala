@@ -45,3 +45,8 @@ object Test extends App:
   val m5 = summon[Mirror.Of[outer.Inner]]
   assert(m5.defaultArgument(1) == 3 + 1)
   outer.localTest(9d)
+
+
+  // new defaultArgument match tree should be able to unify different default value types
+  case class Foo[T](x: Int = 0, y: String = "hi")
+
