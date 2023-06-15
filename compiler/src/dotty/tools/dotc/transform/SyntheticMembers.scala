@@ -564,9 +564,10 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
       val getterDenot = companionTree.tpe.member(getterName)
       companionTree.select(TermRef(companionTree.tpe, getterName, getterDenot))
 
-    val withDefaultCases =
-      for (acc, idx) <- caseClass.caseAccessors.zipWithIndex if acc.is(HasDefault)
-      yield CaseDef(Literal(Constant(idx)), EmptyTree, defaultArgumentGetter(idx))
+    val withDefaultCases = for
+      (acc, idx) <- caseClass.caseAccessors.zipWithIndex if acc.is(HasDefault)
+      body = Typed(defaultArgumentGetter(idx), TypeTree(defn.AnyType)) // so match tree does try to find union of case types
+    yield CaseDef(Literal(Constant(idx)), EmptyTree, body)
 
     val withoutDefaultCase =
       val stringIndex = Apply(Select(index, nme.toString_), Nil)
