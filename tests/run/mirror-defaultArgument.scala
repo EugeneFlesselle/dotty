@@ -47,6 +47,14 @@ object Test extends App:
   outer.localTest(9d)
 
 
-  // new defaultArgument match tree should be able to unify different default value types
+  // defaultArgument body should be able to unify different default argument types
   case class Foo[T](x: Int = 0, y: String = "hi")
+
+
+  case class WithPrivateConstructor private(o: Option[(Int, Double)] = None)
+  val m6 = summon[Mirror.Of[WithPrivateConstructor]]
+  assert(m6.defaultArgument(0) == None)
+
+
+
 
