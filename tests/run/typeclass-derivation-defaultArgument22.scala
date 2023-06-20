@@ -36,23 +36,20 @@ object Migration:
     type FromIdx = IndexOf[from.MirroredElemLabels, Label]
 
     inline constValueOpt[FromIdx] match
-//    inline erasedValue[FromIdx] match
 
       case Some(fromIdx) =>
-//      case _: Int =>
         type FromElem = Elem[from.MirroredElemTypes, FromIdx]
         type ToElem = Elem[to.MirroredElemTypes, ToIdx]
         summonFrom { case _: Migration[FromElem, ToElem] =>
           x.productElement(fromIdx).asInstanceOf[FromElem].migrateTo[ToElem]
         }
-
         // TODO use deriveOrSummon ?
 //        val m = deriveOrSummon[F,T, FromElem, ToElem]
 //        val m = deriveOrSummon[F,T, Elem[from.MirroredElemTypes, FromIdx], Elem[to.MirroredElemTypes, ToIdx]]
 //        m(x.productElement(fromIdx).asInstanceOf[FromElem])
 //        m(x.productElement(constValue[FromIdx]).asInstanceOf[FromElem])
 
-      case _ =>
+      case None =>
         type HasDefault = Elem[to.MirroredElemHasDefaults, ToIdx]
         inline erasedValue[HasDefault] match
           case _: true => to.defaultArgument(constValue[ToIdx])
@@ -94,11 +91,6 @@ object Migration:
     migrations(from.ordinal(x)).asInstanceOf[Migration[Any, Nothing]](x)
 
   implicit inline def derived[F,T](using from: M.Of[F], to: M.Of[T]): Migration[F,T] = (x: F) =>
-    type FromType = Elem[from.MirroredElemTypes, 0]
-    type ToType = Elem[to.MirroredElemTypes, 0]
-    deriveOrSummon[F, T, FromType, ToType] // FAILS !!!!!!!!!!!
-//    deriveOrSummon[F, T, Elem[from.MirroredElemTypes, 0], Elem[to.MirroredElemTypes, 0]]
-
     inline from match
       case fromP: M.ProductOf[F] => inline to match
         case toP: M.ProductOf[T] => migrateProduct[F, T](fromP, toP)(x.asInstanceOf[Product])
@@ -109,16 +101,13 @@ object Migration:
 
   trait Migratable[F: M.Of]:
 
-    trait To[T] extends Migration[F,T] {}
+    trait To[T] extends Migration[F,T] {} // but not Migration[F,T] <:< Migratable[F]To[T] (indeed one could manually provide a Migration for an F without a mirror)
     object To:
       inline def derived[T: M.Of]: To[T] = // abstract method syntax
         Migration.derived[F,T](using summonInline[M.Of[F]], summonInline[M.Of[T]])(_: F) // summonInline to keep refinments
 
   object Migratable:
     inline def derived[F: M.Of] = new Migratable[F] {}
-
-  // does not imply Migration[F,T] <:< Migratable[F]To[T]
-  // indeed one could manually provide a Migration for an F without a mirror
 
 end Migration
 
@@ -133,9 +122,7 @@ object Test extends App:
   assert(Foo(10).migrateTo[Bar] == Bar(10))
 
 
-
   given Migration[Int, Double] = Migration.from(_.toDouble)
-
 
   enum F derives Migratable:
     case A(x: Int)
