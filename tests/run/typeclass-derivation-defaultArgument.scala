@@ -22,7 +22,6 @@ object Migration:
   }
 
   inline def migrateElem[F,T, ToIdx <: Int](from: M.ProductOf[F], to: M.ProductOf[T])(x: Product): Any =
-
     type Label = Elem[to.MirroredElemLabels, ToIdx]
     type FromIdx = IndexOf[from.MirroredElemLabels, Label]
     inline constValueOpt[FromIdx] match
