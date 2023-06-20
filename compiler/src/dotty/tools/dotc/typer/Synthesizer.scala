@@ -435,6 +435,11 @@ class Synthesizer(typer: Typer)(using @constructorOnly c: Context):
       }
       val mirrorRef =
         if cls.useCompanionAsProductMirror then companionPath(mirroredType, span)
+
+        else if cls.is(Scala2x) && cls.linkedClass.exists && !cls.linkedClass.is(Case) then
+          // TODO ? recheck companion has a def fromProduct ?
+          New(defn.Mirror_ProductProxyClass.typeRef, companionPath(mirroredType, span) :: Nil)
+
         else if defn.isTupleClass(cls) then newTupleMirror(typeElems.size) // TODO: cls == defn.PairClass when > 22
         else anonymousMirror(monoType, MirrorImpl.OfProduct(pre), span)
       withNoErrors(mirrorRef.cast(mirrorType))
@@ -465,8 +470,29 @@ class Synthesizer(typer: Typer)(using @constructorOnly c: Context):
           else
             val reason = s"it reduces to a tuple with arity $arity, expected arity <= $maxArity"
             withErrors(i"${defn.PairClass} is not a generic product because $reason")
+
         case MirrorSource.ClassSymbol(pre, cls) =>
+
+          /*
+          GenericProduct == case class with accessible constructor
+                         == companionMirror || canAccessCtor
+                         == (!Scala2x && !hasCaseObject) || (!privateCtr || companionMirror)
+                         == !(Scala2x || hasCaseObject) || !privateCtr
+
+          !GenericProduct == (Scala2x || hasCaseObject) && privateCtr
+          */
+
+//          def hasCaseObject = cls.linkedClass.exists && cls.linkedClass.is(Case)
+//          def privateCtr = ???
+
           if cls.isGenericProduct then makeProductMirror(pre, cls, None)
+
+//          else /* => hasPrivateCtr */ if cls.is(Scala2x) && !hasCaseObject  then
+//              // still want to reuse the original companion object
+//              // generate an anonymous class that wraps the companion
+//
+////            if cls.primaryConstructor.hasDefaultParams then ??? // can not access the getters for defaults
+
           else withErrors(i"$cls is not a generic product because ${cls.whyNotGenericProduct}")
       case Left(msg) =>
         withErrors(i"type `$mirroredType` is not a generic product because $msg")

@@ -40,6 +40,21 @@ object Mirror {
 
   }
 
+  abstract class ProductProxy(val companion: AnyRef) extends Mirror {
+
+    /** Create a new instance of type `T` with elements taken from product `p`. */
+    def fromProduct(p: scala.Product): MirroredMonoType =
+      companion.asInstanceOf[Mirror.ProductOf[MirroredMonoType]].fromProduct(p)
+
+    /** Whether each product element has a default value */
+    @experimental type MirroredElemHasDefaults <: Tuple
+
+    /** The default argument of the product argument at given `index` */
+    @experimental def defaultArgument(index: Int): Any =
+      throw NoSuchElementException(String.valueOf(index))
+
+  }
+
   trait Singleton extends Product {
     type MirroredMonoType = this.type
     type MirroredType = this.type
