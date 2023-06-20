@@ -31,8 +31,8 @@ object Mirror {
     /** Create a new instance of type `T` with elements taken from product `p`. */
     def fromProduct(p: scala.Product): MirroredMonoType
 
-    /** Whether each product element has a default value */
-    @experimental type MirroredElemHasDefaults <: Tuple
+//    /** Whether each product element has a default value */
+//    @experimental type MirroredElemHasDefaults <: Tuple
 
     /** The default argument of the product argument at given `index` */
     @experimental def defaultArgument(index: Int): Any =
@@ -46,8 +46,8 @@ object Mirror {
     def fromProduct(p: scala.Product): MirroredMonoType =
       companion.asInstanceOf[Mirror.ProductOf[MirroredMonoType]].fromProduct(p)
 
-    /** Whether each product element has a default value */
-    @experimental type MirroredElemHasDefaults <: Tuple
+//    /** Whether each product element has a default value */
+//    @experimental type MirroredElemHasDefaults <: Tuple
 
     /** The default argument of the product argument at given `index` */
     @experimental def defaultArgument(index: Int): Any =
@@ -73,7 +73,7 @@ object Mirror {
   }
 
   type Of[T] = Mirror { type MirroredType = T; type MirroredMonoType = T ; type MirroredElemTypes <: Tuple }
-  type ProductOf[T] = Mirror.Product { type MirroredType = T; type MirroredMonoType = T ; type MirroredElemTypes <: Tuple }
+  type ProductOf[T] = Mirror.Product { type MirroredType = T; type MirroredMonoType = T; type MirroredElemTypes <: Tuple; type MirroredElemHasDefaults <: Tuple }
   type SumOf[T] = Mirror.Sum { type MirroredType = T; type MirroredMonoType = T; type MirroredElemTypes <: Tuple }
 
   extension [T](p: ProductOf[T])
