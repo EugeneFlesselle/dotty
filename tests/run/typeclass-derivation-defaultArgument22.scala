@@ -43,11 +43,6 @@ object Migration:
         summonFrom { case _: Migration[FromElem, ToElem] =>
           x.productElement(fromIdx).asInstanceOf[FromElem].migrateTo[ToElem]
         }
-        // TODO use deriveOrSummon ?
-//        val m = deriveOrSummon[F,T, FromElem, ToElem]
-//        val m = deriveOrSummon[F,T, Elem[from.MirroredElemTypes, FromIdx], Elem[to.MirroredElemTypes, ToIdx]]
-//        m(x.productElement(fromIdx).asInstanceOf[FromElem])
-//        m(x.productElement(constValue[FromIdx]).asInstanceOf[FromElem])
 
       case None =>
         type HasDefault = Elem[to.MirroredElemHasDefaults, ToIdx]
@@ -76,9 +71,6 @@ object Migration:
     inline constValueOpt[ToIdx] match
       case None => error("A case has no equivalent")
       case Some(_) =>
-//        type FromType = Elem[from.MirroredElemTypes, FromIdx]
-//        type ToType = Elem[to.MirroredElemTypes, ToIdx]
-//        deriveOrSummon[F,T, FromType, ToType] // FAILS !!!!!!!!!!!
         deriveOrSummon[F,T, Elem[from.MirroredElemTypes, FromIdx], Elem[to.MirroredElemTypes, ToIdx]]
 
   inline def migrateCases[F, T, FromIdx <: Int](from: M.SumOf[F], to: M.SumOf[T]): List[Migration[?,?]] =
@@ -101,9 +93,9 @@ object Migration:
 
   trait Migratable[F: M.Of]:
 
-    trait To[T] extends Migration[F,T] {} // but not Migration[F,T] <:< Migratable[F]To[T] (indeed one could manually provide a Migration for an F without a mirror)
+    trait To[T] extends Migration[F,T] {}
     object To:
-      inline def derived[T: M.Of]: To[T] = // abstract method syntax
+      inline def derived[T: M.Of]: To[T] =
         Migration.derived[F,T](using summonInline[M.Of[F]], summonInline[M.Of[T]])(_: F) // summonInline to keep refinments
 
   object Migratable:
@@ -150,127 +142,17 @@ object Test extends App:
   testFT(F.G("from F"), T.G("from F"))
 
 
-//  case class Gen1[U](x: U) //derives Migratable
-//  case class Gen2[V](x: V, y: Boolean = false) //derives Gen1.derived$Migratable.To
-//
-//  assert(Gen1(5).migrateTo[Gen2[Int]] == Gen2(5, false))
-//  assert(Gen1(5).migrateTo[Gen2[Double]] == Gen2(5d, false))
-//
-//  assert(Some(2).asInstanceOf[Option[Int]].migrateTo[Option[Double]] == Some(2d))
+  assert(Some(2).asInstanceOf[Option[Int]].migrateTo[Option[Double]] == Some(2d))
 
 
+  inline def lift[C[_], D[_], F, T](using Migration[F, T]): Migration[C[F], D[T]] =
+    Migration.derived[C[F], D[T]](using summonInline[M.Of[C[F]]], summonInline[M.Of[D[T]]])
 
+  case class Gen1[U](x: U)
+  case class Gen2[V](x: V, y: Boolean = false)
+  given [F,T](using Migration[F,T]): Migration[Gen1[F], Gen2[T]] = lift[Gen1, Gen2, F,T]
+  assert(Gen1[Int](5).migrateTo[Gen2[Int]] == Gen2(5, false))
+  assert(Gen1(5).migrateTo[Gen2[Double]] == Gen2(5d, false))
 
-
-
-  // TODO with lazy ..
-//  summon[Migration[List[Int], List[Double]]]
-//  assert(List(3, 4, 5).migrateTo[List[Double]] == List(3d, 4d, 5d))
-
-//  assert(List(Some(3), None, Some(5)).asInstanceOf[List[Option[Int]]].migrateTo[List[Option[Double]]] == List(Some(3d), None, Some(5d)))
-
-//  summon[Some[Int] <:< Option[Int]]
-//  summon[Migration[Option[Int], Option[Double]] <:< Migration[Some[Int], Option[Double]]]
-
-//  extension [F](f: F)
-//    def migrateTo3[T](using m: Migration[_ >: F, T]) = m(f) // ASK why not searching with widened ?
-//
-//  assert(Some(2).migrateTo3[Option[Double]] == Some(2d))
-
-
-
-
-
-
-//  inline def liftD[C[_], D[_], F, T](using Migratable[F]#To[T]): Migration[C[F], D[T]] =
-//  inline def liftD[C[_], D[_], F, T](using Migration[F, T]): Migration[C[F], D[T]] =
-//    Migration.derived[C[F], D[T]](using summonInline[M.Of[C[F]]], summonInline[M.Of[D[T]]])
-//
-//  given [F,T](using Migration[F,T]): Migration[Gen1[F], Gen2[T]] = liftD[Gen1, Gen2, F,T]
-//
-//  assert(Gen1[Int](5).migrateTo[Gen2[Int]] == Gen2(5, false))
-//  assert(Gen1(5).migrateTo[Gen2[Double]] == Gen2(5d, false))
-
-
-
-//  inline def lift[C[_], F,T](using Migration[F,T]): Migration[C[F], C[T]] =
-//    Migration.derived[C[F], C[T]](using summonInline[M.Of[C[F]]], summonInline[M.Of[C[T]]])
-
-//  given [F,T](using Migration[F,T]): Migration[Option[F], Option[T]] = lift[Option, F,T]
-
-//  given [F,T](using Migration[F,T]): Migration[List[F], List[T]] = lift[F,T, List]
-
-
-
-
-//  type MigrationOf[U <: Tuple] = U match { case (f *: t *: EmptyTuple) => Migration[f,t] }
-//
-//  transparent inline def lift2[C[_], U <: Tuple : MigrationOf] =
-//    inline erasedValue[U] match
-//      case _: (f *: t *: EmptyTuple) =>
-//        Migration.derived[C[f], C[t]](using summonInline[M.Of[C[f]]], summonInline[M.Of[C[t]]])
-//
-//  given (using Migration[Int, Double]): Migration[List[Int], List[Double]] = lift2[List, (Int, Double)]
-//  assert(List(1, 2).migrateTo[List[Double]] == List(1d, 2d))
-
-
-//  transparent inline def lift4[C[_]] = [U <: Tuple] => () => // TODO using MigrationOf[U]
-//    inline erasedValue[U] match
-//      case _: (f *: t *: EmptyTuple) =>
-//        migration[C[f], C[t]](using summonInline[M.Of[C[f]]], summonInline[M.Of[C[t]]])
-//
-//  given (using Migration[Int, Double]): Migration[List[Int], List[Double]] = lift4[List][(Int, Double)]()
-//  assert(List(1, 2).migrateTo[List[Double]] == List(1d, 2d))
-
-
-
-//  type MigrationOf2[U <: Tuple2[_,_]] = U match { case (f, t) => Migration[f,t] }
-//
-//  type Test0 = MigrationOf2[(Int, Int)]
-//  summon[Test0 =:= Migration[Int, Int]]
-//
-//  type Map2[U <: Tuple2[_,_], C[_]] = U match { case (f, t) => (C[f], C[t]) }
-//
-//  inline def lift3[C[_], U <: Tuple2 : MigrationOf2]: MigrationOf[Map2[U, C]] =
-//    inline erasedValue[U] match
-//      case _: (f *: t *: EmptyTuple) =>
-//        migration[C[f], C[t]](using summonInline[M.Of[C[f]]], summonInline[M.Of[C[t]]])
-//
-////  given [U: MigrationOf]: MigrationOf[Map[U, List]] = lift2[U, List]
-//
-////  given MigrationOf[Map[(Int, Double), List]] = lift2[U, List]
-////  given (using Migration[Int, Double]): Migration[List[Int], List[Double]] = lift2[List, (Int, Double)]
-//  given (using Migration[Int, Double]): Migration[List[Int], List[Double]] = lift2[List, (Int, Double)]
-//
-//  assert(List(1, 2).migrateTo[List[Double]] == List(1d, 2d))
-
-
-
-//  given [F,T, C[_]](using Migration[F, T]): Migration[C[F], C[T]] =
-//    migration[C[F], C[T]](using summonInline[M.Of[C[F]]], summon[M.Of[C[T]]])
-
-
-//  given [U: MigrationOf]: MigrationOf[Tuple.Map[U, Option]] = ???
-//  given [U <: Tuple2 : MigrationOf]: MigrationOf[Option[U]] =
-
-
-
-
-//  enum L1:
-//    case Cn(t: Int, ts: L1)
-//    case Nl
-//
-//  enum L2:
-//    case Cn(t: Int, ts: L2)
-//    case Nl
-//
-//  given Migration[L1,L2] = migration[L1,L2]
-//
-//  val l1 = L1.Cn(1, L1.Cn(2, L1.Nl))
-//  val l2 = L2.Cn(1, L2.Cn(2, L2.Nl))
-//  assert(l1.migrateTo[L2] == l2)
-//  assert(L1.Cn(3, L1.Nl).migrateTo[L2] == L2.Cn(3, L2.Nl))
-
-
-
-
+  given [F,T](using Migration[F,T]): Migration[List[F], List[T]] = lift[List, List, F,T]
+  assert(List(1, 2).migrateTo[List[Double]] == List(1d, 2d))
