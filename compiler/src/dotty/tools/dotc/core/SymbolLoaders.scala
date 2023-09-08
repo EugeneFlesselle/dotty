@@ -24,7 +24,8 @@ import ast.desugar
 
 import parsing.JavaParsers.OutlineJavaParser
 import parsing.Parsers.OutlineParser
-import dotty.tools.tasty.TastyHeaderUnpickler
+import dotty.tools.tasty.{TastyHeaderUnpickler, TastyHeader}
+import dotty.tools.tasty.TastyFormat.TastyVersion
 
 
 object SymbolLoaders {
@@ -429,6 +430,11 @@ class TastyLoader(val tastyFile: AbstractFile) extends SymbolLoader {
       classRoot.classSymbol.rootTreeOrProvider = unpickler
       moduleRoot.classSymbol.rootTreeOrProvider = unpickler
     checkTastyUUID(tastyFile, tastyBytes)
+
+    // TODO move
+    val TastyHeader(_, maj, min, exp, _) = new TastyHeaderUnpickler(tastyBytes).readFullHeader()
+    classRoot.classSymbol.tastyVersion = TastyVersion(maj, min, exp)
+    moduleRoot.classSymbol.tastyVersion = TastyVersion(maj, min, exp)
 
 
   private def checkTastyUUID(tastyFile: AbstractFile, tastyBytes: Array[Byte])(using Context): Unit =

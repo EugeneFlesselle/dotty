@@ -32,6 +32,7 @@ import util.{SourceFile, NoSource, Property, SourcePosition, SrcPos, EqHashMap}
 import scala.annotation.internal.sharable
 import config.Printers.typr
 import dotty.tools.dotc.classpath.FileUtils.isScalaBinary
+import dotty.tools.tasty.TastyFormat.TastyVersion
 
 object Symbols {
 
@@ -402,6 +403,9 @@ object Symbols {
     type TreeOrProvider = tpd.TreeProvider | tpd.Tree
 
     private var myTree: TreeOrProvider = tpd.EmptyTree
+
+    // TODO private and getter/setter
+    var tastyVersion: TastyVersion = TastyVersion() // overwritten when loading from Tasty
 
     /** If this is a top-level class and `-Yretain-trees` (or `-from-tasty`) is set.
       * Returns the TypeDef tree (possibly wrapped inside PackageDefs) for this class, otherwise EmptyTree.

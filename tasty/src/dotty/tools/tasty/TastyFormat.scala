@@ -271,6 +271,19 @@ Standard Section: "Comments" Comment*
 
 object TastyFormat {
 
+  // TODO mv ?
+  case class TastyVersion(
+    majorVersion: Int = MajorVersion,
+    minorVersion: Int = MinorVersion,
+    experimentalVersion: Int = ExperimentalVersion
+  ) {
+    def gteq(that: TastyVersion): Boolean = summon[Ordering[(Int, Int, Int)]].gteq(
+      (this.majorVersion, this.minorVersion, this.experimentalVersion),
+      (that.majorVersion, that.minorVersion, that.experimentalVersion)
+    )
+  }
+
+
   /** The first four bytes of a TASTy file, followed by four values:
     * - `MajorVersion: Int` - see definition in `TastyFormat`
     * - `MinorVersion: Int` - see definition in `TastyFormat`

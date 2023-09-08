@@ -22,6 +22,7 @@ import Synthesizer._
 import sbt.ExtractDependencies.*
 import sbt.ClassDependency
 import xsbti.api.DependencyContext._
+import dotty.tools.tasty.TastyFormat.TastyVersion
 
 /** Synthesize terms for special classes */
 class Synthesizer(typer: Typer)(using @constructorOnly c: Context):
@@ -415,7 +416,8 @@ class Synthesizer(typer: Typer)(using @constructorOnly c: Context):
       val elemLabels = accessors.map(acc => ConstantType(Constant(acc.name.toString)))
       val elemsLabels = TypeOps.nestedPairs(elemLabels)
 
-      val elemHasDefaults = accessors.map(acc => ConstantType(Constant(acc.is(HasDefault))))
+      val canSupportDefaults = cls.asClass.tastyVersion gteq TastyVersion(28, 4, 1) // TODO? cst
+      val elemHasDefaults = accessors.map(acc => ConstantType(Constant(canSupportDefaults && acc.is(HasDefault))))
       val elemsHasDefaults = TypeOps.nestedPairs(elemHasDefaults)
 
       val typeElems = tps.getOrElse(accessors.map(mirroredType.resultType.memberInfo(_).widenExpr))
@@ -474,7 +476,7 @@ class Synthesizer(typer: Typer)(using @constructorOnly c: Context):
               // case class `cls` changes. See `sbt-test/source-dependencies/mirror-product`.
               val rec = ctx.compilationUnit.depRecorder
               rec.addClassDependency(cls, DependencyByMemberRef)
-              rec.addUsedName(cls.primaryConstructor)
+              rec.addUsedName(cls.primaryConstructor) // TODO test when only adding default
             makeProductMirror(pre, cls, None)
           else withErrors(i"$cls is not a generic product because ${cls.whyNotGenericProduct}")
       case Left(msg) =>
