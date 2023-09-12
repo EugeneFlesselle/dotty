@@ -6,5 +6,9 @@ transparent inline def foo[T](using m: Mirror.Of[T]): Int =
     case _: (Int *: EmptyTuple) => 1
     case _: (Int *: String *: EmptyTuple) => 2
 
+def getDefault[T](using m: Mirror.ProductOf[T]): Any = m.defaultArgument(0)
+
 @main def Test =
   assert(foo[MyProduct] == 2)
+  assert(getDefault[WillGetDefault] == 1)
+  assert(getDefault[WillChangeDefault] == 2)
