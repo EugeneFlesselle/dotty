@@ -19,6 +19,7 @@ import Phases._
 import ast.tpd.Literal
 
 import dotty.tools.dotc.transform.sjs.JSSymUtils.sjsNeedsField
+import dotty.tools.tasty.TastyFormat.TastyVersion
 
 import scala.annotation.tailrec
 
@@ -106,6 +107,8 @@ object SymUtils:
     end whyNotGenericProduct
 
     def isGenericProduct(using Context): Boolean = whyNotGenericProduct.isEmpty
+
+    def mirrorCanSupportDefaults: Boolean = self.isClass && self.asClass.tastyVersion.gteq(TastyVersion(28, 4, 1)) // TODO? cst
 
     /** Is this an old style implicit conversion?
      *  @param directOnly            only consider explicitly written methods

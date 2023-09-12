@@ -431,7 +431,7 @@ class TastyLoader(val tastyFile: AbstractFile) extends SymbolLoader {
       moduleRoot.classSymbol.rootTreeOrProvider = unpickler
     checkTastyUUID(tastyFile, tastyBytes)
 
-    // TODO move
+    // TODO with checkTastyUUID
     val TastyHeader(_, maj, min, exp, _) = new TastyHeaderUnpickler(tastyBytes).readFullHeader()
     classRoot.classSymbol.tastyVersion = TastyVersion(maj, min, exp)
     moduleRoot.classSymbol.tastyVersion = TastyVersion(maj, min, exp)

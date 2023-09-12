@@ -405,7 +405,7 @@ object Symbols {
     private var myTree: TreeOrProvider = tpd.EmptyTree
 
     // TODO private and getter/setter
-    var tastyVersion: TastyVersion = TastyVersion() // overwritten when loading from Tasty
+    var tastyVersion: TastyVersion = TastyVersion.current // overwritten when loading from Tasty
 
     /** If this is a top-level class and `-Yretain-trees` (or `-from-tasty`) is set.
       * Returns the TypeDef tree (possibly wrapped inside PackageDefs) for this class, otherwise EmptyTree.

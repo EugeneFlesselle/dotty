@@ -271,19 +271,6 @@ Standard Section: "Comments" Comment*
 
 object TastyFormat {
 
-  // TODO mv ?
-  case class TastyVersion(
-    majorVersion: Int = MajorVersion,
-    minorVersion: Int = MinorVersion,
-    experimentalVersion: Int = ExperimentalVersion
-  ) {
-    def gteq(that: TastyVersion): Boolean = summon[Ordering[(Int, Int, Int)]].gteq(
-      (this.majorVersion, this.minorVersion, this.experimentalVersion),
-      (that.majorVersion, that.minorVersion, that.experimentalVersion)
-    )
-  }
-
-
   /** The first four bytes of a TASTy file, followed by four values:
     * - `MajorVersion: Int` - see definition in `TastyFormat`
     * - `MinorVersion: Int` - see definition in `TastyFormat`
@@ -322,6 +309,18 @@ object TastyFormat {
    *  `MinorVersion` is strictly less than the current value.
    */
   final val ExperimentalVersion: Int = 1
+
+  // TODO? use in TastyHeader
+  case class TastyVersion(majorVersion: Int, minorVersion: Int, experimentalVersion: Int) {
+    def gteq(that: TastyVersion): Boolean = summon[Ordering[(Int, Int, Int)]].gteq(
+      (this.majorVersion, this.minorVersion, this.experimentalVersion),
+      (that.majorVersion, that.minorVersion, that.experimentalVersion)
+    )
+  }
+
+  object TastyVersion {
+    val current: TastyVersion = TastyVersion(MajorVersion, MinorVersion, ExperimentalVersion)
+  }
 
   /**This method implements a binary relation (`<:<`) between two TASTy versions.
    *
