@@ -2,7 +2,7 @@ package dotty.tools.dotc
 package core
 package tasty
 
-import dotty.tools.tasty.{TastyBuffer, TastyReader}
+import dotty.tools.tasty.{TastyBuffer, TastyReader, TastyHeader}
 import TastyBuffer.NameRef
 
 import Contexts.*, Decorators.*
@@ -104,7 +104,7 @@ class TastyPrinter(bytes: Array[Byte]) {
 
     private val sb: StringBuilder = new StringBuilder
 
-    def unpickle(reader: TastyReader, tastyName: NameTable): String = {
+    def unpickle(reader: TastyReader, header: TastyHeader, tastyName: NameTable): String = {
       import reader.*
       var indent = 0
       def newLine() = {
@@ -179,7 +179,7 @@ class TastyPrinter(bytes: Array[Byte]) {
 
     private val sb: StringBuilder = new StringBuilder
 
-    def unpickle(reader: TastyReader, tastyName: NameTable): String = {
+    def unpickle(reader: TastyReader, header: TastyHeader, tastyName: NameTable): String = {
       val posUnpickler = new PositionUnpickler(reader, tastyName)
       sb.append(s" ${reader.endAddr.index - reader.currentAddr.index}")
       sb.append(" position bytes:\n")
@@ -211,7 +211,7 @@ class TastyPrinter(bytes: Array[Byte]) {
 
     private val sb: StringBuilder = new StringBuilder
 
-    def unpickle(reader: TastyReader, tastyName: NameTable): String = {
+    def unpickle(reader: TastyReader, header: TastyHeader, tastyName: NameTable): String = {
       sb.append(s" ${reader.endAddr.index - reader.currentAddr.index}")
       val comments = new CommentUnpickler(reader).comments
       sb.append(s" comment bytes:\n")
@@ -228,7 +228,7 @@ class TastyPrinter(bytes: Array[Byte]) {
   import dotty.tools.tasty.TastyFormat.attributeTagToString
     private val sb: StringBuilder = new StringBuilder
 
-    def unpickle(reader: TastyReader, tastyName: NameTable): String = {
+    def unpickle(reader: TastyReader, header: TastyHeader, tastyName: NameTable): String = {
       sb.append(s" ${reader.endAddr.index - reader.currentAddr.index}")
       val attributeTags = new AttributeUnpickler(reader).attributeTags
       sb.append(s"  attributes bytes:\n")

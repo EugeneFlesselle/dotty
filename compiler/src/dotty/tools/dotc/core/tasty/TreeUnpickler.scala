@@ -34,7 +34,7 @@ import Decorators.*
 import transform.SymUtils.*
 import dotty.tools.dotc.quoted.QuotePatterns
 
-import dotty.tools.tasty.{TastyBuffer, TastyReader}
+import dotty.tools.tasty.{TastyBuffer, TastyReader, TastyHeader}
 import TastyBuffer.*
 
 import scala.annotation.{switch, tailrec}
@@ -55,6 +55,7 @@ import scala.compiletime.uninitialized
  *  @param attributeUnpicklerOpt the unpickler for attributes, if it exists
  */
 class TreeUnpickler(reader: TastyReader,
+                    tastyHeader: TastyHeader,
                     nameAtRef: NameTable,
                     posUnpicklerOpt: Option[PositionUnpickler],
                     commentUnpicklerOpt: Option[CommentUnpickler],

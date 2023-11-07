@@ -2,7 +2,7 @@ package dotty.tools.dotc
 package core
 package tasty
 
-import dotty.tools.tasty.{TastyBuffer, TastyReader}
+import dotty.tools.tasty.{TastyBuffer, TastyReader, TastyHeader}
 import TastyBuffer.NameRef
 
 import Contexts.*, Decorators.*
@@ -22,7 +22,7 @@ class TastyClassName(bytes: Array[Byte]) {
 
   class TreeSectionUnpickler extends SectionUnpickler[(TermName, TermName)](ASTsSection) {
     import dotty.tools.tasty.TastyFormat.*
-    def unpickle(reader: TastyReader, tastyName: NameTable): (TermName, TermName) = {
+    def unpickle(reader: TastyReader, header: TastyHeader, tastyName: NameTable): (TermName, TermName) = {
       import reader.*
       def readNames(packageName: TermName): (TermName, TermName) = {
         val tag = readByte()

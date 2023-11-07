@@ -4,7 +4,7 @@ package tasty
 
 import scala.language.unsafeNulls
 
-import dotty.tools.tasty.{TastyFormat, TastyBuffer, TastyReader, TastyHeaderUnpickler, UnpicklerConfig}
+import dotty.tools.tasty.{TastyFormat, TastyBuffer, TastyReader, TastyHeaderUnpickler, UnpicklerConfig, TastyHeader}
 import TastyHeaderUnpickler.TastyVersion
 import TastyFormat.NameTags.*, TastyFormat.nameTagToString
 import TastyBuffer.NameRef
@@ -16,7 +16,7 @@ import NameKinds.*
 object TastyUnpickler {
 
   abstract class SectionUnpickler[R](val name: String) {
-    def unpickle(reader: TastyReader, nameAtRef: NameTable): R
+    def unpickle(reader: TastyReader, tastyHeader: TastyHeader, nameAtRef: NameTable): R
   }
 
   class NameTable extends (NameRef => TermName) {
@@ -122,7 +122,7 @@ class TastyUnpickler(reader: TastyReader) {
     result
   }
 
-  new TastyHeaderUnpickler(scala3CompilerConfig, reader).readHeader()
+  private val tastyHeader = new TastyHeaderUnpickler(scala3CompilerConfig, reader).readFullHeader()
 
   locally {
     until(readEnd()) { nameAtRef.add(readNameContents()) }
@@ -136,7 +136,7 @@ class TastyUnpickler(reader: TastyReader) {
 
   def unpickle[R](sec: SectionUnpickler[R]): Option[R] =
     for (reader <- sectionReader.get(sec.name)) yield
-      sec.unpickle(reader, nameAtRef)
+      sec.unpickle(reader, tastyHeader, nameAtRef)
 
   private[dotc] def bytes: Array[Byte] = reader.bytes
 }

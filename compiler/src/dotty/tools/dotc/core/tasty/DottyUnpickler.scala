@@ -12,7 +12,7 @@ import classfile.ClassfileParser
 import Names.SimpleName
 import TreeUnpickler.UnpickleMode
 
-import dotty.tools.tasty.TastyReader
+import dotty.tools.tasty.{TastyReader, TastyHeader}
 import dotty.tools.tasty.TastyFormat.{ASTsSection, PositionsSection, CommentsSection, AttributesSection}
 
 object DottyUnpickler {
@@ -22,21 +22,21 @@ object DottyUnpickler {
 
   class TreeSectionUnpickler(posUnpickler: Option[PositionUnpickler], commentUnpickler: Option[CommentUnpickler], attributeUnpickler: Option[AttributeUnpickler])
   extends SectionUnpickler[TreeUnpickler](ASTsSection) {
-    def unpickle(reader: TastyReader, nameAtRef: NameTable): TreeUnpickler =
-      new TreeUnpickler(reader, nameAtRef, posUnpickler, commentUnpickler, attributeUnpickler)
+    def unpickle(reader: TastyReader, header: TastyHeader, nameAtRef: NameTable): TreeUnpickler =
+      new TreeUnpickler(reader, header, nameAtRef, posUnpickler, commentUnpickler, attributeUnpickler)
   }
 
   class PositionsSectionUnpickler extends SectionUnpickler[PositionUnpickler](PositionsSection) {
-    def unpickle(reader: TastyReader, nameAtRef: NameTable): PositionUnpickler =
+    def unpickle(reader: TastyReader, header: TastyHeader, nameAtRef: NameTable): PositionUnpickler =
       new PositionUnpickler(reader, nameAtRef)
   }
 
   class CommentsSectionUnpickler extends SectionUnpickler[CommentUnpickler](CommentsSection) {
-    def unpickle(reader: TastyReader, nameAtRef: NameTable): CommentUnpickler =
+    def unpickle(reader: TastyReader, header: TastyHeader, nameAtRef: NameTable): CommentUnpickler =
       new CommentUnpickler(reader)
   }
   class AttributesSectionUnpickler extends SectionUnpickler[AttributeUnpickler](AttributesSection) {
-    def unpickle(reader: TastyReader, nameAtRef: NameTable): AttributeUnpickler =
+    def unpickle(reader: TastyReader, header: TastyHeader, nameAtRef: NameTable): AttributeUnpickler =
       new AttributeUnpickler(reader)
   }
 }
