@@ -29,6 +29,7 @@ import TypeErasure.erasure
 import reporting.*
 import config.Feature.sourceVersion
 import config.SourceVersion.*
+import dotty.tools.tasty.TastyHeaderUnpickler.TastyVersion
 
 import scala.compiletime.uninitialized
 
@@ -252,6 +253,7 @@ class Namer { typer: Typer =>
             cls => adjustIfModule(new ClassCompleter(cls, tree)(ctx), tree),
             newClassSymbol(ctx.owner, name, _, _, _, tree.nameSpan, ctx.source.file))
         cls.completer.asInstanceOf[ClassCompleter].init()
+        cls.asClass.tastyVersion = TastyVersion.latest
         cls
       case tree: MemberDef =>
         var flags = checkFlags(tree.mods.flags)

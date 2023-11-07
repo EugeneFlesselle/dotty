@@ -32,6 +32,7 @@ import util.{SourceFile, NoSource, Property, SourcePosition, SrcPos, EqHashMap}
 import scala.annotation.internal.sharable
 import config.Printers.typr
 import dotty.tools.dotc.classpath.FileUtils.isScalaBinary
+import dotty.tools.tasty.TastyHeaderUnpickler.TastyVersion
 
 import scala.compiletime.uninitialized
 
@@ -483,6 +484,16 @@ object Symbols {
 
     final def classDenot(using Context): ClassDenotation =
       denot.asInstanceOf[ClassDenotation]
+
+    private var myTastyVersion: TastyVersion | Null = null // TODO? NoTastyVersion
+
+    // TODO? doc
+    def tastyVersion: TastyVersion =
+      require(myTastyVersion != null) // AR
+      myTastyVersion.nn
+
+    private[dotc] def tastyVersion_=(tastyVersion: TastyVersion) =
+      myTastyVersion = tastyVersion
 
     override protected def prefixString: String = "ClassSymbol"
   }

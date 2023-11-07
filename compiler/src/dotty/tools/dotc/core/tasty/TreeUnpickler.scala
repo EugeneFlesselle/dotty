@@ -624,6 +624,7 @@ class TreeUnpickler(reader: TastyReader,
           case Some(rootd) =>
             pickling.println(i"overwriting ${rootd.symbol} # ${rootd.hashCode}")
             rootd.symbol.coord = coord
+            if rootd.isClass then rootd.symbol.asClass.tastyVersion = tastyHeader.tastyVersion
             rootd.info = adjustIfModule(
                 new Completer(subReader(start, end)) with SymbolLoaders.SecondCompleter)
             rootd.flags = flags &~ Touched // allow one more completion
@@ -633,7 +634,9 @@ class TreeUnpickler(reader: TastyReader,
           case _ =>
             val completer = adjustIfModule(new Completer(subReader(start, end)))
             if (isClass)
-              newClassSymbol(ctx.owner, name.asTypeName, flags, completer, privateWithin, coord)
+              val sym = newClassSymbol(ctx.owner, name.asTypeName, flags, completer, privateWithin, coord)
+              sym.tastyVersion = tastyHeader.tastyVersion // AR move to factory ?
+              sym
             else
               newSymbol(ctx.owner, name, flags, completer, privateWithin, coord)
         }

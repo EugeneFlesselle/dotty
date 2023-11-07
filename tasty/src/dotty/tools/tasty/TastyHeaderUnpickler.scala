@@ -26,7 +26,9 @@ sealed abstract case class TastyHeader(
   minorVersion: Int,
   experimentalVersion: Int,
   toolingVersion: String
-)
+) {
+  def tastyVersion: TastyVersion = TastyVersion(majorVersion, minorVersion, experimentalVersion)
+}
 
 trait UnpicklerConfig {
   /** The TASTy major version that this reader supports */
@@ -236,5 +238,10 @@ object TastyHeaderUnpickler {
       val extra = Option.when(experimental > 0)(this)
       s"stable TASTy from ${min.show} to ${max.show}${extra.fold("")(e => s", or exactly ${e.show}")}"
     }
+  }
+
+  object TastyVersion {
+    /** Latest TASTy version as defined by TastyFormat. */
+    val latest: TastyVersion = TastyVersion(TastyFormat.MajorVersion, TastyFormat.MinorVersion, TastyFormat.ExperimentalVersion)
   }
 }
