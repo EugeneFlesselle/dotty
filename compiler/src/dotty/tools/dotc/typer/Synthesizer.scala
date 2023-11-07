@@ -414,7 +414,8 @@ class Synthesizer(typer: Typer)(using @constructorOnly c: Context):
       val elemLabels = accessors.map(acc => ConstantType(Constant(acc.name.toString)))
       val elemsLabels = TypeOps.nestedPairs(elemLabels)
 
-      val elemHasDefaults = accessors.map(acc => ConstantType(Constant(acc.is(HasDefault))))
+      val supportsDefaults = cls.mirrorSupportsDefaultArguments
+      val elemHasDefaults = accessors.map(acc => ConstantType(Constant(supportsDefaults && acc.is(HasDefault))))
       val elemsHasDefaults = TypeOps.nestedPairs(elemHasDefaults)
 
       val typeElems = tps.getOrElse(accessors.map(mirroredType.resultType.memberInfo(_).widenExpr))

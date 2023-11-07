@@ -17,6 +17,7 @@ import Constants.Constant
 import Annotations.Annotation
 import Phases.*
 import ast.tpd.Literal
+import dotty.tools.tasty.TastyHeaderUnpickler.TastyVersion
 
 import dotty.tools.dotc.transform.sjs.JSSymUtils.sjsNeedsField
 
@@ -106,6 +107,15 @@ object SymUtils:
     end whyNotGenericProduct
 
     def isGenericProduct(using Context): Boolean = whyNotGenericProduct.isEmpty
+
+    /** Is a case class for which mirrors support access to default arguments.
+     */
+    def mirrorSupportsDefaultArguments(using Context): Boolean =
+      !self.is(JavaDefined) && !self.is(Scala2x) && self.isClass && {
+//        val tastyVersion: TastyVersion = ???
+//        tastyVersion.major == 28 && tastyVersion.minor >= 4
+        true // TODO
+      }
 
     /** Is this an old style implicit conversion?
      *  @param directOnly            only consider explicitly written methods

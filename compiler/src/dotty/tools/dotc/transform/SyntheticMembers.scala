@@ -668,8 +668,8 @@ class SyntheticMembers(thisPhase: DenotTransformer) {
       addParent(defn.Mirror_ProductClass.typeRef)
       addMethod(nme.fromProduct, MethodType(defn.ProductClass.typeRef :: Nil, monoType.typeRef), cls,
         fromProductBody(_, _, optInfo).ensureConforms(monoType.typeRef))  // t4758.scala or i3381.scala are examples where a cast is needed
-      if cls.primaryConstructor.hasDefaultParams then overrideMethod(nme.defaultArgument,
-        MethodType(defn.IntType :: Nil, defn.AnyType), cls, defaultArgumentBody(_, _, optInfo))
+      if cls.mirrorSupportsDefaultArguments && cls.primaryConstructor.hasDefaultParams then overrideMethod(
+        nme.defaultArgument, MethodType(defn.IntType :: Nil, defn.AnyType), cls, defaultArgumentBody(_, _, optInfo))
     }
     def makeSumMirror(cls: Symbol, optInfo: Option[MirrorImpl.OfSum]) = {
       addParent(defn.Mirror_SumClass.typeRef)
