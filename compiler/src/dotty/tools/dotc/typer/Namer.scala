@@ -241,6 +241,8 @@ class Namer { typer: Typer =>
           prev
         }
         else symFn(flags1, infoFn, privateWithin)
+
+      if sym.isClass then sym.asClass.tastyVersion = TastyVersion.latest
       recordSym(sym, tree)
     }
 
@@ -253,7 +255,7 @@ class Namer { typer: Typer =>
             cls => adjustIfModule(new ClassCompleter(cls, tree)(ctx), tree),
             newClassSymbol(ctx.owner, name, _, _, _, tree.nameSpan, ctx.source.file))
         cls.completer.asInstanceOf[ClassCompleter].init()
-        cls.asClass.tastyVersion = TastyVersion.latest
+//        cls.asClass.tastyVersion = TastyVersion.latest
         cls
       case tree: MemberDef =>
         var flags = checkFlags(tree.mods.flags)

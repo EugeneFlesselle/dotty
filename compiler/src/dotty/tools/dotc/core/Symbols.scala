@@ -485,9 +485,9 @@ object Symbols {
     final def classDenot(using Context): ClassDenotation =
       denot.asInstanceOf[ClassDenotation]
 
-    private var myTastyVersion: TastyVersion | Null = null // TODO? NoTastyVersion
+//    private var myTastyVersion: TastyVersion | Null = null // xTODO? NoTastyVersion
+    private var myTastyVersion: TastyVersion | Null = TastyVersion.latest
 
-    // TODO? doc
     def tastyVersion: TastyVersion =
       require(myTastyVersion != null) // AR
       myTastyVersion.nn

@@ -112,9 +112,8 @@ object SymUtils:
      */
     def mirrorSupportsDefaultArguments(using Context): Boolean =
       !self.is(JavaDefined) && !self.is(Scala2x) && self.isClass && {
-//        val tastyVersion: TastyVersion = ???
-//        tastyVersion.major == 28 && tastyVersion.minor >= 4
-        true // TODO
+        val tastyVersion = self.asClass.tastyVersion
+        tastyVersion.major == 28 && tastyVersion.minor >= 4
       }
 
     /** Is this an old style implicit conversion?

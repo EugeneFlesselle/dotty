@@ -20,6 +20,17 @@ import scala.annotation.internal.sharable
 import scala.util.control.NoStackTrace
 import transform.MacroAnnotations
 
+// from context we get the comp unit
+
+// TODO MOVE into here
+//  - tastyVersion
+//  - needsCaptureChecking (right now annotated on symbols)
+//  - explicit nulls (now an attribute)
+
+// TODO new structure associated to (before) AbsrtactFile
+//  the fields we have in a compilation unit end up in this strucrure (and serialized as a tasty attributes)
+
+
 class CompilationUnit protected (val source: SourceFile) {
 
   override def toString: String = source.toString
