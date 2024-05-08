@@ -50,13 +50,12 @@ object Serializable:
 end Serializable
 
 
-def showTwice(x: Containing[Showable]) = x.value.show + x.value.show
+def showTwice(x: Containing[Showable]) = x.show + x.show
 
-def showAll(xs: Seq[Containing[Showable]]) =
-  xs.map(_.value.show)
+def showAll(xs: Seq[Containing[Showable]]): Seq[String] = xs.map(_.show)
 
 def showPairs(xs: Containing[Showable]{type Value <: Tuple} *) = xs.collect:
-  case x if x.value.size == 2 => x.value.show
+  case x if x.size == 2 => x.show
 
 
 @main def Test =
@@ -66,9 +65,10 @@ def showPairs(xs: Containing[Showable]{type Value <: Tuple} *) = xs.collect:
   Containing[Showable]("Hello")
   val x: Containing[Showable] = Containing("Hello")
 
-  // Deconstructing
+  // Destructing
   assert(x.witness.show(x.value) == "Hello")
   assert(x.value.show == "Hello")
+  assert(x.show == "Hello")
 
   // Passing
   assert(showTwice(x) == "HelloHello")
