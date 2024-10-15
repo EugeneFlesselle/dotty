@@ -8,6 +8,7 @@ import scala.TmpPredef.TypeClass
 /** TODO
  *   - documentation
  *   - move into Predef (we get errors if it is not in src-bootstrapped for now)
+ *   - rename file
  * */
 object TmpPredef:
 
@@ -15,6 +16,8 @@ object TmpPredef:
 
   @experimental trait TypeClass:
     type Self
+
+  type Convertible[To] = [From] =>> Conversion[From, To]
 
 end TmpPredef
 
@@ -33,31 +36,38 @@ end TmpPredef
  *  @tparam Concept The type class representing the interface required for the wrapped value
  *
  */
-@experimental sealed trait Containing[Concept <: TypeClass]:
+sealed trait Container:
   /** The type of the contained value. */
-  type Value : Concept as witness
+  type Value
   /** The contained value. */
   val value: Value
 
-object Containing:
 
-  /** A `Containing[C]` where the contained value is known to have type `V`.
+class ContainerNil[V](val value: V) extends Container:
+  type Value >: V <: V
+
+class ContainerCons[+C <: Container, T <: TypeClass](val c: C)(using w: c.Value is T) extends Container:
+  export c.{Value, value}
+  given witness: (Value is T) = w
+
+infix type :&[+C <: Container, T <: TypeClass] = ContainerCons[C, T]
+
+
+
+object Container:
+  import TmpPredef.Convertible
+
+  /** A `Container` of a value known to have type `V`.
    *
    *  Keeping the member `type Value` abstract by using equal bounds instead of `type Value = V`,
-   *  preserves it's existential nature and the achor to the `witness` that it models `C`.
+   *  preserves it's existential nature and the achor to the `witness` that it models `C`. AR
    * */
-  type Precisely[C <: TypeClass, V] = Containing[C] { type Value >: V <: V }
+  type Of[V] = Container { type Value <: V }
 
-  /** Wrapes a value of type `V` into a `Containing[C]` provided a witness that `V is C`.
-   *
-   *  The first type parameter list is `[C <: TypeClass]` to maintain the same signature as the trait.
-   *  But the witness is not in the first term parameter list,
-   *  to allow constraining its `type Self` with the one of the value being wrapped.
-   */
-  def apply[C <: TypeClass](v: Any)[V >: v.type : C] = new Precisely[C, V]:
-    val value: Value = v
+  type InvOf[V] = Container { type Value >: V <: V }
 
-  /** An implicit constructor for `Containing.Precisely[C, V]` from `V`. */
-  given constructor[C <: TypeClass, V : C]: Conversion[V, Precisely[C, V]] = apply
+  def apply[V](v: V): ContainerNil[V] = ContainerNil(v)
 
-end Containing
+  extension (self: Container)
+    implicit
+    def apply[T <: TypeClass](using self.Value is T): self.type :& T = ContainerCons(self)

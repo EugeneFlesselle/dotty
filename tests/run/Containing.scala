@@ -1,84 +1,98 @@
 
 import scala.language.experimental.modularity
+import scala.language.experimental.clauseInterleaving
+
 import scala.TmpPredef.*
-import scala.Containing
+import scala.Container
+
+object TypeClassExamples:
+
+  trait Showable extends TypeClass:
+    extension (self: Self) def show: String
+
+  object Showable:
+
+    given String is Showable:
+      extension (self: String) def show: String = self
+
+    given Int is Showable:
+      extension (self: Int) def show: String = s"My int is $self"
+
+    given EmptyTuple is Showable:
+      extension (self: EmptyTuple) def show: String = "EmptyTuple"
+    given [H : Showable, T <: Tuple : Showable] => (H *: T) is Showable:
+      extension (self: H *: T) def show: String = s"${self.head.show} andThen ${self.tail.show}"
+
+  end Showable
 
 
-trait Showable extends TypeClass:
-  extension (self: Self) def show: String
+  trait Numeric extends TypeClass:
+    extension (self: Self) def toInt: Int
 
-object Showable:
-
-  given String is Showable:
-    extension (self: String) def show: String = self
-
-  given Int is Showable:
-    extension (self: Int) def show: String = s"My int is $self"
-
-  given EmptyTuple is Showable:
-    extension (self: EmptyTuple) def show: String = "EmptyTuple"
-  given [H : Showable, T <: Tuple : Showable] => (H *: T) is Showable:
-    extension (self: H *: T) def show: String = s"${self.head.show} andThen ${self.tail.show}"
-
-end Showable
+  object Numeric:
+    given [A : math.Numeric] => A is Numeric:
+      extension (self: A) def toInt: Int = A.toInt(self)
 
 
-trait Numeric extends TypeClass:
-  extension (self: Self) def toInt: Int
+  trait Serializable extends TypeClass:
+    type Output
+    extension (self: Self) def serialized: Output
 
-object Numeric:
-  given [A : math.Numeric] => A is Numeric:
-    extension (self: A) def toInt: Int = A.toInt(self)
-end Numeric
+  object Serializable:
+    type To[O] = Serializable { type Output = O }
 
+    given String is Serializable:
+      type Output = String
+      extension (self: String) def serialized = self
 
-trait Serializable extends TypeClass:
-  type Output
-  extension (self: Self) def serialized: Output
+    given Int is Serializable as intIsSerializableToByte:
+      type Output = Byte
+      extension (self: Int) def serialized: Byte = self.toByte
 
-object Serializable:
-  type To[O] = Serializable { type Output = O }
+    given Int is Serializable as intIsSerializableToString:
+      type Output = String
+      extension (self: Int) def serialized: String = self.toString
+  end Serializable
 
-  given Int is Serializable as intIsSerializableToByte:
-    type Output = Byte
-    extension (self: Int) def serialized: Byte = self.toByte
-
-  given Int is Serializable as intIsSerializableToString:
-    type Output = String
-    extension (self: Int) def serialized: String = self.toString
-
-end Serializable
+end TypeClassExamples
+import TypeClassExamples.*
 
 
-def showTwice(x: Containing[Showable]) = x.show + x.show
-
-def showAll(xs: Seq[Containing[Showable]]): Seq[String] = xs.map(_.show)
-
-def showPairs(xs: Containing[Showable]{type Value <: Tuple} *) = xs.collect:
-  case x if x.size == 2 => x.show
-
-
-@main def Test =
+/** Basic example */
+object Example1:
 
   // Constructing
-  Containing[Showable]("Hello")[String]
-  Containing[Showable]("Hello")
-  val x: Containing[Showable] = Containing("Hello")
+  val x1 = Container[String]("Hello")[Showable](using Showable.given_is_String_Showable)
+  val x2 = Container("Hello")[Showable]
+  val x3 : Container :& Showable = Container("Hello")
 
   // Destructing
-  assert(x.witness.show(x.value) == "Hello")
-  assert(x.value.show == "Hello")
-  assert(x.show == "Hello")
+  val v3: x3.Value = x3.value
+  val w3: x3.Value is Showable = x3.witness
+  // with explicit selections of the witness, value, and extension method
+  val r1: String = w3.show(v3)
+  // with implicit selection of the witness and extension method
+  val r2: String = v3.show
+  // with implicit selection of the value in addition
+  val r3: String = x3.show
 
-  // Passing
-  assert(showTwice(x) == "HelloHello")
+end Example1
+
+
+/** Using collections of heterogenous conformances */
+object Example2:
+
+  def showTwice(x: Container :& Showable) = x.show + x.show
+
+  def showAll(xs: Seq[Container :& Showable]): Seq[String] = xs.map(_.show)
+
+  showTwice(Container("Hello"))
 
   showAll(Seq(
-    Containing("Hello again"),
-    "world".as[Containing[Showable]],
-    23.as
+    Container("Hello again"),
+    Container(12),
+    Container(("Hello again", 34)),
   ))
 
-  locally:
-    import scala.Containing.constructor
-    showPairs((1, 2), (3, 4, 5), (6, 7), EmptyTuple)
+end Example2
+

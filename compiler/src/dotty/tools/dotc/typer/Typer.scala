@@ -757,10 +757,10 @@ class Typer(@constructorOnly nestingLevel: Int = 0) extends Namer
         tree1
       else if canDefineFurther(qual.tpe.widen) then
         typedSelect(tree, pt, qual)
-      else if qual.tpe.derivesFrom(defn.AnyContainingClass) then
+      else if qual.tpe.derivesFrom(defn.ContainerClass) then
         // TODO more checks (possible infinite rec ?)
         // TODO document this
-        val containedValue = qual.select(defn.AnyContaining_value)
+        val containedValue = qual.select(defn.Container_value)
         typedSelect(untpd.Select(containedValue, selName), pt, containedValue)
       else if qual.tpe.derivesFrom(defn.DynamicClass)
         && selName.isTermName && !isDynamicExpansion(tree)
