@@ -33,6 +33,9 @@ object TypeClassExamples:
     given [A : math.Numeric] => A is Numeric:
       extension (self: A) def toInt: Int = A.toInt(self)
 
+    given String is Numeric:
+      extension (self: String) def toInt: Int = self.length
+  end Numeric
 
   trait Serializable extends TypeClass:
     type Output
@@ -64,17 +67,22 @@ object Example1:
   // Constructing
   val x1 = Container[String]("Hello")[Showable](using Showable.given_is_String_Showable)
   val x2 = Container("Hello")[Showable]
-  val x3 : Container :& Showable = Container("Hello")
+  val x3: Container :& Showable = Container("Hello")
 
   // Destructing
-  val v3: x3.Value = x3.value
-  val w3: x3.Value is Showable = x3.witness
   // with explicit selections of the witness, value, and extension method
-  val r1: String = w3.show(v3)
+  val r1: String =
+    val v3: x3.Value = x3.value
+    val w3: x3.Value is Showable = x3.witness
+    w3.show(v3)
   // with implicit selection of the witness and extension method
-  val r2: String = v3.show
-  // with implicit selection of the value in addition
+  val r2: String = x3.value.show
+  // with implicit selection of the value too
   val r3: String = x3.show
+
+  // Calling
+  def showTwice(x: Container :& Showable) = x.show + x.show
+  showTwice(x3)
 
 end Example1
 
@@ -82,11 +90,7 @@ end Example1
 /** Using collections of heterogenous conformances */
 object Example2:
 
-  def showTwice(x: Container :& Showable) = x.show + x.show
-
   def showAll(xs: Seq[Container :& Showable]): Seq[String] = xs.map(_.show)
-
-  showTwice(Container("Hello"))
 
   showAll(Seq(
     Container("Hello again"),
@@ -96,3 +100,30 @@ object Example2:
 
 end Example2
 
+
+/** Using containers with multiple conformances */
+object Example3:
+
+  def showPos(xs: Container :& Showable :& Numeric *) =
+    for x <- xs if x.toInt > 0 yield x.show
+
+  showPos(
+    Container(12)[Showable][Numeric],
+    Container("hi")[Showable][Numeric],
+  )
+
+end Example3
+
+
+/** Using containers with bounded `Value`s */
+object Example4:
+
+  def showPairs(xs: Container.OfCo[Tuple] :& Showable *) = xs.collect:
+    case x if x.size == 2 => x.show
+
+  showPairs(
+    Container((12, "34", 56)),
+    Container(("12", 89)),
+  )
+
+end Example4

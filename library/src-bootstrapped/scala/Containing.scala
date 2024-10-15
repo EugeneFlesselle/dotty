@@ -55,19 +55,18 @@ infix type :&[+C <: Container, T <: TypeClass] = ContainerCons[C, T]
 
 
 object Container:
-  import TmpPredef.Convertible
 
   /** A `Container` of a value known to have type `V`.
    *
    *  Keeping the member `type Value` abstract by using equal bounds instead of `type Value = V`,
-   *  preserves it's existential nature and the achor to the `witness` that it models `C`. AR
+   *  preserves it as an non-dealisable achor to the `witness`.
    * */
-  type Of[V] = Container { type Value <: V }
-
-  type InvOf[V] = Container { type Value >: V <: V }
+  type Of[V] = Container { type Value >: V <: V }
+  type OfCo[+V] = Container { type Value <: V }
 
   def apply[V](v: V): ContainerNil[V] = ContainerNil(v)
 
-  extension (self: Container)
-    implicit
-    def apply[T <: TypeClass](using self.Value is T): self.type :& T = ContainerCons(self)
+  extension [V, C <: Container.Of[V]](self: C)
+    implicit def apply[T <: TypeClass](using V is T): C :& T = ContainerCons(self)
+
+end Container
