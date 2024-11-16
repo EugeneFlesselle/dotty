@@ -19,7 +19,10 @@ object TmpPredef:
 
   type Convertible[To] = [From] =>> Conversion[From, To]
 
+  given [X] => Conversion[X, X] = identity
+
 end TmpPredef
+
 
 
 /** A value together with an evidence of its type conforming to some type class.
@@ -32,9 +35,6 @@ end TmpPredef
  *     `qual.name`
  *  where `qual` derives from `Containing` and `name` is not a member of `qual` will attempt
  *     `qual.value.name`
- *
- *  @tparam Concept The type class representing the interface required for the wrapped value
- *
  */
 sealed trait Container:
   /** The type of the contained value. */
@@ -42,9 +42,10 @@ sealed trait Container:
   /** The contained value. */
   val value: Value
 
+  final def capture[T <: TypeClass](using Value is T): this.type :& T = ContainerCons(this)
 
-class ContainerNil[V](val value: V) extends Container:
-  type Value >: V <: V
+
+class ContainerNil[V](val value: V) extends Container.Of[V]
 
 class ContainerCons[+C <: Container, T <: TypeClass](val c: C)(using w: c.Value is T) extends Container:
   export c.{Value, value}
@@ -59,7 +60,7 @@ object Container:
   /** A `Container` of a value known to have type `V`.
    *
    *  Keeping the member `type Value` abstract by using equal bounds instead of `type Value = V`,
-   *  preserves it as an non-dealisable achor to the `witness`.
+   *  preserves it as an non-dealisable anchor to the `witness`.
    * */
   type Of[V] = Container { type Value >: V <: V }
   type OfCo[+V] = Container { type Value <: V }
@@ -68,5 +69,16 @@ object Container:
 
   extension [V, C <: Container.Of[V]](self: C)
     implicit def apply[T <: TypeClass](using V is T): C :& T = ContainerCons(self)
+
+  object Conversions:
+    import TmpPredef.*
+
+    given [V] => Conversion[V, Container.Of[V]] as nil =
+      ContainerNil(_)
+
+    given [T <: TypeClass, V : T, C <: Of[V], S : Convertible[C]] => Conversion[S, C :& T] as cons:
+      def apply(x: S): C :& T = x.as[C].capture[T]
+
+  end Conversions
 
 end Container

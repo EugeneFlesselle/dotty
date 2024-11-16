@@ -1,6 +1,5 @@
 
-import scala.language.experimental.modularity
-import scala.language.experimental.clauseInterleaving
+import scala.language.experimental.{modularity, clauseInterleaving}
 
 import scala.TmpPredef.*
 import scala.Container
@@ -108,15 +107,38 @@ object Example3:
     for x <- xs if x.toInt > 0 yield x.show
 
   showPos(
+    // explicit applications of the Container.apply exentsion method (note the order is relevant)
     Container(12)[Showable][Numeric],
     Container("hi")[Showable][Numeric],
+    // 1 implicit application of the Container.apply exentsion method
+    Container("hi")[Showable],
+    // omitting the 2nd requires importing Container.Conversions (see below)
+
+    // `capture` is the same `apply` but always explicit
+    Container("hi").capture[Showable].capture[Numeric],
+    Container(0).capture[Showable],
   )
+
+  import scala.language.implicitConversions
+  import TmpPredef.given // refl conv
+  import Container.Conversions.cons
+
+  showPos(Container("implicit capturing"))
+
+  import Container.Conversions.nil
+
+  showPos("implicit capturing and wrapping")
+
 
 end Example3
 
 
 /** Using containers with bounded `Value`s */
 object Example4:
+
+  // We have to use `OfCo` for the Tuple to be an *upper* bound
+  // but over places (namely construction site) need an invariant `Of` since
+  // subsequent capturing of witnesses maybe for non-covariant type classes
 
   def showPairs(xs: Container.OfCo[Tuple] :& Showable *) = xs.collect:
     case x if x.size == 2 => x.show
